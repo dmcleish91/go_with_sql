@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 )
 
 type Album struct {
@@ -16,7 +17,9 @@ type Album struct {
 }
 
 func main() {
-	DATABASE_URL := "postgresql://"
+	godotenv.Load()
+	DATABASE_URL := os.Getenv("DATABASE_URL")
+
 	conn, err := pgxpool.New(context.Background(), DATABASE_URL)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
@@ -25,7 +28,7 @@ func main() {
 	defer conn.Close()
 
 	fetchAllAlbums(conn)
-	fetchAlbum(conn)
+	fetchAlbum(9, conn)
 
 	albums := []Album{
 		{Title: "Still Bill", Artist: "Bill Withers", Price: 56.99},
@@ -61,9 +64,9 @@ func fetchAllAlbums(conn *pgxpool.Pool) {
 	fmt.Println(albums)
 }
 
-func fetchAlbum(conn *pgxpool.Pool) {
+func fetchAlbum(id int, conn *pgxpool.Pool) {
 	var album = Album{}
-	err := conn.QueryRow(context.Background(), "SELECT * FROM album WHERE id = $1", 2).Scan(&album.ID, &album.Title, &album.Artist, &album.Price)
+	err := conn.QueryRow(context.Background(), "SELECT * FROM album WHERE id = $1", id).Scan(&album.ID, &album.Title, &album.Artist, &album.Price)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
 		os.Exit(1)
